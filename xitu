@@ -1,0 +1,112 @@
+#coding:utf-8
+
+import numpy as np
+from math import *
+
+def solve(numofele):
+    Ml = [3, 2, 1, 0, -1, -2, -3]
+    Ms = [+0.5, -0.5]
+    dict = arrange(numofele, Ml)
+    array = matrix(dict)
+    result = []
+    return minus(array, result)
+
+# create dict to form the array
+def arrange(num, Ml):
+    numofup = 0
+    numofdown = 0
+    left = num * 0.5
+    right = -num * 0.5 - 1
+    width = np.arange(left, right, -1)
+    up = num * 3
+    down = -num * 3 - 1
+    height = np.arange(up, down, -1)
+    dict = {}
+    for i in height:
+        dict[i] = {}
+        for j in width:
+            numofup = j + 0.5 * num
+            numofdown = num - numofup
+            dict[i][j] = howmanycir(numofup, numofdown, i, Ml)
+    return dict
+
+'''how many circumstances if the number of up and down electron 
+and the total and the constraint of range has been known''' 
+def howmanycir(up, down, tot, Ml):
+    maxi = int(max(up, down))
+    mini = int(min(up, down))
+    Ml.sort(reverse=True)
+    num = sum(Ml[:maxi])
+    result = 0
+    if mini != 0:
+        for i in range(-num, num+1):
+            a = []
+            maxnum = iter(maxi, Ml, a, i, 0) / factorial(maxi)
+            j = tot - i
+            minnum = iter(mini, Ml, a, j, 0) / factorial(mini)
+            result += maxnum * minnum
+    else:
+        a = []
+        result += iter(maxi, Ml, a, tot, 0) / factorial(maxi)
+    return result
+
+'''how many circumstances(before normalization) if the times 
+of randomly selection(no repetition) from the selection range
+and the total has been known'''
+def iter(numofiter, Ml, a, requiretot, numofcir):
+    for i in Ml:
+        subMl = copy(Ml)
+        subMl.remove(i)
+        b = copy(a)
+        b.append(i)
+        numtemp = numofiter
+        numtemp -= 1
+        if numtemp == 0:
+            if sum(b) == requiretot: numofcir += 1
+        else:
+            numofcir = iter(numtemp, subMl, b, requiretot, numofcir)    # tricky
+    return numofcir
+
+# copy array to server the 'iter' function
+def copy(array):
+    temp = []
+    for i in array:
+        temp.append(i)
+    return temp
+
+# create array from the dictionary
+def matrix(dict):
+    raw = len(dict)
+    column = len(dict[0])
+    result = np.zeros((raw, column))
+    keys = sorted(dict.keys(), reverse=True)
+    for i in range(len(keys)):
+        values = dict[keys[i]]
+        temp = sorted(values.keys(), reverse=True)
+        for j in range(len(temp)):
+            result[i][j] = values.get(temp[j])
+    return result
+
+# minus arranged list of 1 to conclude the spectroscopic term
+def minus(array, result):
+    raw = len(array)
+    column = len(array[0])
+    for i in range(raw):
+        for j in range(column):
+            if array[i][j] != 0:
+                array[i:raw-i, j:column-j] = array[i:raw-i, j:column-j] - 1
+                result.append(symbol(raw - 2*i, column - 2*j))
+                subarray = array
+                return minus(subarray, result)
+            else: continue
+    return set(result)    # avoid repetition
+
+# how to sybolize the minus term
+def symbol(raw, column):
+    L = (raw - 1) / 2
+    S = (column - 1)/2.0
+    orbit = {0:'S', 1:'P', 2:'D', 3:'F', 4:'G', 5:'H', 6:'I', 7:'K', 8:'L', 9:'M', 10:'N', 11:'O', 12:'Q'}
+    return "%d%s" % (int(2*S+1), orbit[L])
+
+# --edited by Yunxing Zuo
+# --edited with notepad++
